@@ -67,6 +67,12 @@ class JisiluScraper:
                     'path': cookie.path,
                 })
             
+            # Ensure the directory exists
+            cookie_dir = os.path.dirname(self.cookie_json_file)
+            if cookie_dir and not os.path.exists(cookie_dir):
+                os.makedirs(cookie_dir)
+                logger.info(f"Created cookie directory: {cookie_dir}")
+            
             with open(self.cookie_json_file, 'w', encoding='utf-8') as f:
                 json.dump(cookies_list, f, indent=2)
             
