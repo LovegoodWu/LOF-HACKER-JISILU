@@ -51,6 +51,14 @@ vim .env
 JISILU_ENCRYPTED_USERNAME=你的加密用户名
 JISILU_ENCRYPTED_PASSWORD=你的加密密码
 
+# 获取加密用户名和密码的方法：
+# 1. 在浏览器中登录 https://www.jisilu.cn/
+# 2. 按 F12 打开开发者工具，切换到 Network 标签
+# 3. 重新登录一次，找到 /webapi/account/login_process/ 请求
+# 4. 点击该请求，查看"Payload"或"Request"标签
+# 5. 复制 user_name 和 password 的值（已经是加密后的）
+# 6. 填入 .env 文件的 JISILU_ENCRYPTED_USERNAME 和 JISILU_ENCRYPTED_PASSWORD
+
 # =============================================================================
 # 邮件通知配置（126 邮箱）
 # =============================================================================
@@ -198,12 +206,75 @@ vim .env  # 填入你的配置
 # 4. 导入 Cookies（从本地上传）
 scp data/.jisilu_cookies.json user@your-server:/path/to/LOFHacker/data/
 
-# 5. 设置定时任务（每天 13:00 执行）
-crontab -e
-# 添加：0 13 * * * cd /path/to/LOFHacker && /path/to/LOFHacker/.venv/bin/python main.py >> logs/cron.log 2>&1
+# 5. 设置 systemd timer（每天 10:00 和 13:00 各执行一次）
+# 创建 service 文件
+sudo vim /etc/systemd/system/lof-hacker.service
+# 内容见下方示例
+
+# 创建 timer 文件
+sudo vim /etc/systemd/system/lof-hacker.timer
+# 内容见下方示例
+
+# 启用并启动 timer
+sudo systemctl daemon-reload
+sudo systemctl enable lof-hacker.timer
+sudo systemctl start lof-hacker.timer
 
 # 6. 测试运行
 python main.py
+```
+
+### systemd 配置示例
+
+**1. 创建 service 文件** `/etc/systemd/system/lof-hacker.service`：
+
+```ini
+[Unit]
+Description=LOF Hacker Arbitrage Monitor
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/root/LOF-HACKER-JISILU
+ExecStart=/root/LOF-HACKER-JISILU/.venv/bin/python /root/LOF-HACKER-JISILU/main.py
+StandardOutput=journal
+StandardError=journal
+```
+
+**2. 创建 timer 文件** `/etc/systemd/system/lof-hacker.timer`：
+
+```ini
+[Unit]
+Description=Run LOF Hacker daily at 10:00 and 13:00
+Requires=lof-hacker.service
+
+[Timer]
+# 每天 10:00 触发
+OnCalendar=*-*-* 10:00:00
+# 每天 13:00 触发（多行写法）
+OnCalendar=*-*-* 13:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+**3. 常用命令**：
+
+```bash
+# 查看所有激活的 timer
+systemctl list-timers
+
+# 查看 timer 状态
+systemctl status lof-hacker.timer
+
+# 查看 timer 详细信息（包括下次触发时间）
+systemctl list-timers lof-hacker.timer --all
+
+# 查看日志
+journalctl -u lof-hacker.service
+journalctl -fu lof-hacker.service  # 实时跟踪
 ```
 
 ## 项目结构
@@ -347,6 +418,35 @@ scp data/.jisilu_cookies.json user@server:/path/to/LOFHacker/data/
 vim .env
 # 填写 JISILU_ENCRYPTED_USERNAME 和 JISILU_ENCRYPTED_PASSWORD
 ```
+
+### systemd Timer 不执行
+
+**症状**：timer 已启用但到时间不执行
+
+**解决方案**：
+```bash
+# 1. 检查 timer 状态
+systemctl status lof-hacker.timer
+systemctl list-timers lof-hacker.timer --all
+
+# 2. 检查 service 状态
+systemctl status lof-hacker.service
+
+# 3. 查看日志
+journalctl -u lof-hacker.service --since today
+
+# 4. 如果配置有修改，重新加载
+sudo systemctl daemon-reload
+sudo systemctl restart lof-hacker.timer
+
+# 5. 手动触发一次测试
+sudo systemctl start lof-hacker.service
+```
+
+**常见问题**：
+- `OnCalendar` 语法错误：确保每个时间单独一行
+- `Timezone` 配置：systemd 使用系统时区，不要配置 Timezone
+- 权限问题：确保 `WorkingDirectory` 和 `ExecStart` 路径正确
 
 ## 相关文档
 
