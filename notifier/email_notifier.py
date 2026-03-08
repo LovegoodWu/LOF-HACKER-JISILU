@@ -45,7 +45,7 @@ class EmailNotifier:
     
     def send_arbitrage_alert(
         self,
-        opportunities_html: str,
+        opportunities: list[dict],
         count: int,
         subject_prefix: str = "LOF 套利机会提醒"
     ) -> bool:
@@ -53,7 +53,7 @@ class EmailNotifier:
         Send arbitrage opportunity alert email.
         
         Args:
-            opportunities_html: HTML table of arbitrage opportunities.
+            opportunities: List of arbitrage opportunity data.
             count: Number of opportunities found.
             subject_prefix: Email subject prefix.
             
@@ -62,9 +62,87 @@ class EmailNotifier:
         """
         # Generate email content
         subject = f"{subject_prefix} - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        opportunities_html = self._format_opportunities_table(opportunities)
         html_content = self._generate_email_html(opportunities_html, count)
         
         return self.send_email(subject, html_content)
+    
+    def _format_opportunities_table(self, opportunities: list[dict]) -> str:
+        """
+        Format arbitrage opportunities as HTML table.
+        Uses same field configuration as Feishu notification.
+        
+        Args:
+            opportunities: List of arbitrage opportunity data.
+            
+        Returns:
+            str: HTML table string.
+        """
+        if not opportunities:
+            return "<p>未发现符合条件的套利机会</p>"
+        
+        # Direct mapping from jisilu API field names to Chinese display names
+        field_display_names = {
+            'fund_id': '代码',
+            'fund_nm': '名称',
+            'discount_rt': '溢价率',
+            'apply_status': '申购状态',
+            'price': '现价',
+            'estimate_value': '估值',
+            'fund_nav': '净值',
+            'nav_dt': '净值日期',
+            'volume': '成交额 (万)',
+            'turnover_rt': '换手率'
+        }
+        
+        # Build column list from settings (same as Feishu notification)
+        columns = []
+        for field in settings.NOTIFY_REQUIRED_FIELDS:
+            field = field.strip()
+            if field in field_display_names:
+                columns.append(field)
+        for field in settings.NOTIFY_OPTIONAL_FIELDS:
+            field = field.strip()
+            if field in field_display_names:
+                columns.append(field)
+        
+        # If no columns configured, use default
+        if not columns:
+            columns = ['fund_id', 'fund_nm', 'discount_rt', 'apply_status']
+        
+        # Build HTML table header
+        html = """
+        <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+            <tr style="background-color: #f2f2f2;">
+        """
+        for col in columns:
+            display_name = field_display_names.get(col, col)
+            html += f"<th>{display_name}</th>"
+        html += "</tr>"
+        
+        # Build table rows
+        for fund in opportunities:
+            html += "<tr>"
+            for col in columns:
+                value = fund.get(col, 'N/A')
+                
+                # Format value based on field type
+                if col == 'discount_rt':
+                    if isinstance(value, (int, float)):
+                        value_str = f"{value:.2f}%"
+                    else:
+                        value_str = str(value)
+                    html += f'<td style="color: red; font-weight: bold;">{value_str}</td>'
+                elif col == 'fund_id':
+                    html += f'<td style="font-weight: bold;">{value}</td>'
+                elif isinstance(value, float):
+                    html += f'<td>{value:.3f}</td>'
+                else:
+                    html += f'<td>{value}</td>'
+            html += "</tr>"
+        
+        html += "</table>"
+        return html
     
     def _generate_email_html(self, opportunities_html: str, count: int) -> str:
         """

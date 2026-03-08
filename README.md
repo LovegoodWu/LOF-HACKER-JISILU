@@ -75,6 +75,14 @@ FEISHU_ENABLED=false
 FEISHU_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/your_token
 FEISHU_MESSAGE_TYPE=text
 
+# -----------------------------------------------------------------------------
+# 通知字段配置
+# -----------------------------------------------------------------------------
+# 必选字段：fund_id, fund_nm, discount_rt, apply_status
+NOTIFY_REQUIRED_FIELDS=fund_id,fund_nm,discount_rt,apply_status
+# 可选字段：price, estimate_value, fund_nav, nav_dt, volume, turnover_rt
+NOTIFY_OPTIONAL_FIELDS=price,estimate_value,fund_nav,nav_dt
+
 # =============================================================================
 # 套利筛选条件
 # =============================================================================

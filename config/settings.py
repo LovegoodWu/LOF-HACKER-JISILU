@@ -38,8 +38,8 @@ class Settings:
     FEISHU_MESSAGE_TYPE: str = os.getenv("FEISHU_MESSAGE_TYPE", "interactive")
     
     # Feishu message field configuration
-    # Required fields (always displayed)
-    NOTIFY_REQUIRED_FIELDS: list = os.getenv("NOTIFY_REQUIRED_FIELDS", "code,name,premium_rate,subscription_status").split(",")
+    # Required fields (always displayed) - using jisilu API field names
+    NOTIFY_REQUIRED_FIELDS: list = os.getenv("NOTIFY_REQUIRED_FIELDS", "fund_id,fund_nm,discount_rt,apply_status").split(",")
     
     # Optional fields (displayed if configured)
     NOTIFY_OPTIONAL_FIELDS: list = os.getenv("NOTIFY_OPTIONAL_FIELDS", "").split(",")

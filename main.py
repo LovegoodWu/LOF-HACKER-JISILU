@@ -68,16 +68,10 @@ def run_arbitrage_monitor() -> bool:
         # Step 4: Send notifications (email and/or Feishu)
         notification_sent = False
         
-        # Send email notification
+        # Send email notification (same interface as Feishu)
         if settings.EMAIL_USERNAME and settings.EMAIL_PASSWORD:
             email_notifier = EmailNotifier()
-            
-            if opportunities:
-                opportunities_html = filter_engine.format_for_email(opportunities)
-                email_success = email_notifier.send_arbitrage_alert(opportunities_html, len(opportunities))
-            else:
-                opportunities_html = "<p>未发现符合条件的套利机会</p>"
-                email_success = email_notifier.send_arbitrage_alert(opportunities_html, 0)
+            email_success = email_notifier.send_arbitrage_alert(opportunities, len(opportunities))
             
             if email_success:
                 logger.info("Email notification sent successfully")

@@ -94,7 +94,7 @@ class FeishuNotifier:
                 code = opp.get('fund_id', '')
                 name = opp.get('fund_nm', '')
                 premium = opp.get('discount_rt', '')
-                status = opp.get('subscription_status', '')
+                status = opp.get('apply_status', '')
                 
                 text_lines.append(f"{i}. {code} {name}")
                 text_lines.append(f"   溢价率：{premium}% | 状态：{status}\n")
@@ -171,12 +171,12 @@ class FeishuNotifier:
                 card_content.append("**📈 套利机会列表：**")
                 card_content.append("")
                 
-                # Field name mapping for display
+                # Direct mapping from jisilu API field names to Chinese display names
                 field_display_names = {
-                    'code': '代码',
-                    'name': '名称',
-                    'premium_rate': '溢价率',
-                    'subscription_status': '申购状态',
+                    'fund_id': '代码',
+                    'fund_nm': '名称',
+                    'discount_rt': '溢价率',
+                    'apply_status': '申购状态',
                     'price': '现价',
                     'estimate_value': '估值',
                     'fund_nav': '净值',
@@ -185,38 +185,23 @@ class FeishuNotifier:
                     'turnover_rt': '换手率'
                 }
                 
-                # Field name to data key mapping
-                field_data_keys = {
-                    'code': 'fund_id',
-                    'name': 'fund_nm',
-                    'premium_rate': 'discount_rt',
-                    'subscription_status': 'apply_status',
-                    'price': 'price',
-                    'estimate_value': 'estimate_value',
-                    'fund_nav': 'fund_nav',
-                    'nav_dt': 'nav_dt',
-                    'volume': 'volume',
-                    'turnover_rt': 'turnover_rt'
-                }
-                
                 for i, opp in enumerate(opportunities[:10], 1):
                     row_parts = []
                     
                     # Add required fields
                     for field in settings.NOTIFY_REQUIRED_FIELDS:
                         field = field.strip()
-                        if field not in field_data_keys:
+                        if field not in field_display_names:
                             continue
                         
-                        data_key = field_data_keys[field]
-                        value = opp.get(data_key, '')
+                        value = opp.get(field, '')
                         
                         # Format value based on field type
-                        if field == 'premium_rate':
+                        if field == 'discount_rt':
                             if isinstance(value, (int, float)):
                                 value = f"{value:.2f}"
                             row_parts.append(f"溢价率：**{value}%**")
-                        elif field == 'code':
+                        elif field == 'fund_id':
                             row_parts.append(f"**{i:2}. {value}**")
                         else:
                             if isinstance(value, float):
@@ -226,11 +211,10 @@ class FeishuNotifier:
                     # Add optional fields
                     for field in settings.NOTIFY_OPTIONAL_FIELDS:
                         field = field.strip()
-                        if field not in field_data_keys:
+                        if field not in field_display_names:
                             continue
                         
-                        data_key = field_data_keys[field]
-                        value = opp.get(data_key, '')
+                        value = opp.get(field, '')
                         
                         # Format value based on field type
                         if isinstance(value, float):
