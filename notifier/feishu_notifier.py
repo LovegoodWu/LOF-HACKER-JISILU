@@ -220,8 +220,18 @@ class FeishuNotifier:
                         if isinstance(value, float):
                             value = f"{value:.3f}"
                         
-                        display_name = field_display_names.get(field, field)
-                        row_parts.append(f"{display_name}: {value}")
+                        # Special handling for estimate_value - show italic for real-time
+                        if field == 'estimate_value':
+                            display_name = field_display_names.get(field, field)
+                            # Check if it's real-time estimated value (rt_eval == 1)
+                            if opp.get('rt_eval') == 1:
+                                # Use italic markdown syntax: _text_
+                                row_parts.append(f"_{display_name}: {value} (实时)_")
+                            else:
+                                row_parts.append(f"{display_name}: {value}")
+                        else:
+                            display_name = field_display_names.get(field, field)
+                            row_parts.append(f"{display_name}: {value}")
                     
                     # Join all parts with separator
                     card_content.append("  |  ".join(row_parts))

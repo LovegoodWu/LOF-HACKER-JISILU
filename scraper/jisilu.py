@@ -483,6 +483,8 @@ class JisiluScraper:
                 't0': cell.get('t0', ''),
                 'apply_fee': cell.get('apply_fee', ''),
                 'redeem_fee': cell.get('redeem_fee', ''),
+                # Real-time estimated value flag (1 = real-time, 0 = not real-time)
+                'rt_eval': cell.get('rt_eval', 0),
             }
             data.append(fund_data)
         

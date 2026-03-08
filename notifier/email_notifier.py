@@ -135,6 +135,17 @@ class EmailNotifier:
                     html += f'<td style="color: red; font-weight: bold;">{value_str}</td>'
                 elif col == 'fund_id':
                     html += f'<td style="font-weight: bold;">{value}</td>'
+                elif col == 'estimate_value':
+                    # Check if it's real-time estimated value (rt_eval == 1)
+                    if isinstance(value, (int, float)):
+                        value_str = f"{value:.3f}"
+                    else:
+                        value_str = str(value)
+                    # Use italic style for real-time estimated value
+                    if fund.get('rt_eval') == 1:
+                        html += f'<td style="font-style: italic;">{value_str} (实时)</td>'
+                    else:
+                        html += f'<td>{value_str}</td>'
                 elif isinstance(value, float):
                     html += f'<td>{value:.3f}</td>'
                 else:
